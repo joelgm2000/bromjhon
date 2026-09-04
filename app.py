@@ -18,9 +18,11 @@ def ejecutar_broma():
     password = "sgje uooy laaw pdms" 
 
     try:
+        print("Conectando con el servidor SMTP de Gmail...")
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(remitente, password)
+        print("¡Login exitoso en Gmail!")
 
         # 1. Enviar los primeros 19 correos de advertencia
         for i in range(19):
@@ -63,15 +65,15 @@ def ejecutar_broma():
             print("Mensaje 20/20 enviado con el video adjunto. Broma completada con éxito.")
             
         except FileNotFoundError:
-            print(f"ERROR: No se encontró el video en la ruta '{ruta_video}'. Súbelo a GitHub junto a app.py.")
+            print(f"ERROR CRÍTICO: No se encontró el archivo '{ruta_video}' en el repositorio de Render.")
         except Exception as e_adjunto:
-            print(f"ERROR al adjuntar el video: {e_adjunto}")
+            print(f"ERROR CRÍTICO al adjuntar el video: {e_adjunto}")
 
         server.quit()
         
     except Exception as e:
-        print(f"Error general: {e}")
-
+        print(f"ERROR CRÍTICO DE AUTENTICACIÓN O SMTP: {e}")
+        
 @app.route('/activar', methods=['GET', 'POST'])
 def activar_broma():
     hilo = threading.Thread(target=ejecutar_broma)
