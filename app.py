@@ -3,21 +3,20 @@ from flask_cors import CORS
 import threading
 import resend
 import time
-import os
+import base64
 
 app = Flask(__name__)
 CORS(app)
 
-# Configura tu API Key de Resend aquí (o ponla como variable de entorno)
-resend.api_key = "re_2yfP5trd_CxXC7KQwvGUhUc6YumC2FNhj"
+# Tu API Key de Resend recién creada
+resend.api_key = "re_2yfP5trd_CxXC7KQwvGUhUC6YumC2FNhj"
 
 def ejecutar_broma():
     correo_destino = "JOELGARCIAMAESTREJGM@GMAIL.COM" 
-    # En el plan gratuito de prueba, Resend usa este remitente seguro:
-    remitente = "onboarding@resend.dev"
+    remitente = "onboarding@resend.dev" # Remitente oficial gratuito de pruebas de Resend
 
     try:
-        print("Iniciando secuencia de la broma a través de la API de Resend...")
+        print("Iniciando envío de la broma a través de la API de Resend...")
 
         # 1. Enviar los primeros 19 correos de advertencia
         for i in range(19):
@@ -35,16 +34,13 @@ def ejecutar_broma():
             time.sleep(3)
 
         # 2. Enviar el último correo (el número 20) con el video ADJUNTO
-        print("Preparando el último correo con el video...")
-        
+        print("Preparando el último correo con el video adjunto...")
         ruta_video = "EL-3REO.mp4"
         
         try:
             with open(ruta_video, "rb") as f:
                 contenido_video = f.read()
             
-            # Resend permite adjuntos convirtiéndolos en base64 o bytes
-            import base64
             video_base64 = base64.b64encode(contenido_video).decode('utf-8')
 
             params_final = {
@@ -61,12 +57,12 @@ def ejecutar_broma():
             }
             
             email_final = resend.Emails.send(params_final)
-            print(f"Mensaje 20/20 enviado con el video adjunto. ID: {email_final.get('id')}")
+            print(f"Mensaje 20/20 enviado con éxito. ID: {email_final.get('id')}")
             
         except FileNotFoundError:
             print(f"ERROR CRÍTICO: No se encontró el archivo '{ruta_video}' en el repositorio de Render.")
         except Exception as e_adjunto:
-            print(f"ERROR CRÍTICO al adjuntar el video: {e_adjunto}")
+            print(f"ERROR al adjuntar el video: {e_adjunto}")
         
     except Exception as e:
         print(f"ERROR CRÍTICO con la API de Resend: {e}")
