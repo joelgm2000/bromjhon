@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS  # <-- Importante para aceptar peticiones de Firebase
 import threading
 import smtplib
 from email.mime.text import MIMEText
@@ -9,12 +10,11 @@ import time
 import os
 
 app = Flask(__name__)
+CORS(app)  # <-- Habilita CORS para permitir llamadas desde Firebase
 
 def ejecutar_broma():
     correo_destino = "JOELGARCIAMAESTREJGM@GMAIL.COM" 
     remitente = "hackingcalavera@gmail.com"
-    
-    # Tu contraseña de aplicación (asegúrate de que siga activa si la generaste recientemente)
     password = "sgje uooy laaw pdms" 
 
     try:
@@ -24,11 +24,9 @@ def ejecutar_broma():
 
         # 1. Enviar los primeros 19 correos de advertencia
         for i in range(19):
-            # Nuevo cuerpo del mensaje
             cuerpo = "Jhon, no te enseñaron que no debes confiar en QR que no sabes de donde vienen!!, soy tu AMIGUE SECRETE.\n\nESPERA EL ÚLTIMO MENSAJE QUE SE ENCUENTRA LA PISTA PARA TU REGALO."
             msg = MIMEText(cuerpo)
             
-            # Nuevo asunto del mensaje
             msg['Subject'] = f"Alerta de Seguridad #{i+1} - ESPERA EL ULTIMO MENSAJE SE ENCUENTRA LA PISTA."
             msg['From'] = remitente
             msg['To'] = correo_destino
@@ -47,10 +45,8 @@ def ejecutar_broma():
         cuerpo_final = "Aquí tienes tu pista. Reproduce el video adjunto para ver la ubicación:"
         msg_final.attach(MIMEText(cuerpo_final, 'plain'))
         
-        # Ruta donde está tu video (asumiendo que app.py está en la raíz de tu proyecto)
         ruta_video = "EL-3REO.mp4"
         
-        # Lógica para adjuntar el archivo
         try:
             with open(ruta_video, "rb") as adjunto:
                 parte = MIMEBase('application', 'octet-stream')
@@ -67,7 +63,7 @@ def ejecutar_broma():
             print("Mensaje 20/20 enviado con el video adjunto. Broma completada con éxito.")
             
         except FileNotFoundError:
-            print(f"ERROR: No se encontró el video en la ruta '{ruta_video}'. Asegúrate de que app.py esté al lado de la carpeta public.")
+            print(f"ERROR: No se encontró el video en la ruta '{ruta_video}'. Súbelo a GitHub junto a app.py.")
         except Exception as e_adjunto:
             print(f"ERROR al adjuntar el video: {e_adjunto}")
 
@@ -76,7 +72,7 @@ def ejecutar_broma():
     except Exception as e:
         print(f"Error general: {e}")
 
-@app.route('/activar')
+@app.route('/activar', methods=['GET', 'POST'])
 def activar_broma():
     hilo = threading.Thread(target=ejecutar_broma)
     hilo.start()
