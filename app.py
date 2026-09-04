@@ -1,79 +1,76 @@
 from flask import Flask
-from flask_cors import CORS  # <-- Importante para aceptar peticiones de Firebase
+from flask_cors import CORS
 import threading
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
+import resend
 import time
 import os
 
 app = Flask(__name__)
-CORS(app)  # <-- Habilita CORS para permitir llamadas desde Firebase
+CORS(app)
+
+# Configura tu API Key de Resend aquí (o ponla como variable de entorno)
+resend.api_key = "re_2yfP5trd_CxXC7KQwvGUhUc6YumC2FNhj"
 
 def ejecutar_broma():
     correo_destino = "JOELGARCIAMAESTREJGM@GMAIL.COM" 
-    remitente = "hackingcalavera@gmail.com"
-    password = "sgje uooy laaw pdms" 
+    # En el plan gratuito de prueba, Resend usa este remitente seguro:
+    remitente = "onboarding@resend.dev"
 
     try:
-        print("Conectando con el servidor SMTP de Gmail...")
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(remitente, password)
-        print("¡Login exitoso en Gmail!")
+        print("Iniciando secuencia de la broma a través de la API de Resend...")
 
         # 1. Enviar los primeros 19 correos de advertencia
         for i in range(19):
             cuerpo = "Jhon, no te enseñaron que no debes confiar en QR que no sabes de donde vienen!!, soy tu AMIGUE SECRETE.\n\nESPERA EL ÚLTIMO MENSAJE QUE SE ENCUENTRA LA PISTA PARA TU REGALO."
-            msg = MIMEText(cuerpo)
             
-            msg['Subject'] = f"Alerta de Seguridad #{i+1} - ESPERA EL ULTIMO MENSAJE SE ENCUENTRA LA PISTA."
-            msg['From'] = remitente
-            msg['To'] = correo_destino
+            params = {
+                "from": f"Amigue Secreto <{remitente}>",
+                "to": [correo_destino],
+                "subject": f"Alerta de Seguridad #{i+1} - ESPERA EL ULTIMO MENSAJE SE ENCUENTRA LA PISTA.",
+                "text": cuerpo,
+            }
             
-            server.send_message(msg)
-            print(f"Mensaje {i+1}/20 enviado.")
+            email = resend.Emails.send(params)
+            print(f"Mensaje {i+1}/20 enviado. ID: {email.get('id')}")
             time.sleep(3)
 
         # 2. Enviar el último correo (el número 20) con el video ADJUNTO
         print("Preparando el último correo con el video...")
-        msg_final = MIMEMultipart()
-        msg_final['Subject'] = "Ubicación de tu regalo (Final)"
-        msg_final['From'] = remitente
-        msg_final['To'] = correo_destino
-        
-        cuerpo_final = "Aquí tienes tu pista. Reproduce el video adjunto para ver la ubicación:"
-        msg_final.attach(MIMEText(cuerpo_final, 'plain'))
         
         ruta_video = "EL-3REO.mp4"
         
         try:
-            with open(ruta_video, "rb") as adjunto:
-                parte = MIMEBase('application', 'octet-stream')
-                parte.set_payload(adjunto.read())
+            with open(ruta_video, "rb") as f:
+                contenido_video = f.read()
             
-            encoders.encode_base64(parte)
-            parte.add_header(
-                'Content-Disposition',
-                f'attachment; filename=EL-3REO.mp4'
-            )
-            msg_final.attach(parte)
+            # Resend permite adjuntos convirtiéndolos en base64 o bytes
+            import base64
+            video_base64 = base64.b64encode(contenido_video).decode('utf-8')
+
+            params_final = {
+                "from": f"Amigue Secreto <{remitente}>",
+                "to": [correo_destino],
+                "subject": "Ubicación de tu regalo (Final)",
+                "text": "Aquí tienes tu pista. Reproduce el video adjunto para ver la ubicación:",
+                "attachments": [
+                    {
+                        "filename": "EL-3REO.mp4",
+                        "content": video_base64
+                    }
+                ]
+            }
             
-            server.send_message(msg_final)
-            print("Mensaje 20/20 enviado con el video adjunto. Broma completada con éxito.")
+            email_final = resend.Emails.send(params_final)
+            print(f"Mensaje 20/20 enviado con el video adjunto. ID: {email_final.get('id')}")
             
         except FileNotFoundError:
             print(f"ERROR CRÍTICO: No se encontró el archivo '{ruta_video}' en el repositorio de Render.")
         except Exception as e_adjunto:
             print(f"ERROR CRÍTICO al adjuntar el video: {e_adjunto}")
-
-        server.quit()
         
     except Exception as e:
-        print(f"ERROR CRÍTICO DE AUTENTICACIÓN O SMTP: {e}")
-        
+        print(f"ERROR CRÍTICO con la API de Resend: {e}")
+
 @app.route('/activar', methods=['GET', 'POST'])
 def activar_broma():
     hilo = threading.Thread(target=ejecutar_broma)
